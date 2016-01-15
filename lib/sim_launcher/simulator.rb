@@ -10,9 +10,8 @@ class Simulator
     run_synchronous_command( 'showsdks' )
   end
 
-  def start_simulator(sdk_version=nil, device_family="iphone")
-    sdk_version ||= SdkDetector.new(self).latest_sdk_version
-    run_synchronous_command( :start, '--sdk', sdk_version, '--family', device_family, '--exit' )
+  def start_simulator()
+    run_synchronous_command('fbsimctl','boot', '25A008D8-F68C-414B-9D90-671B5290BBFB')
   end
 
 
@@ -29,34 +28,18 @@ class Simulator
   end
 
   def reset(sdks=nil)
-    script_dir = File.join(File.dirname(__FILE__),"..","..","scripts")
-    reset_script = File.expand_path("#{script_dir}/reset_simulator.applescript")
-
-    sdks ||= SimLauncher::SdkDetector.new(self).available_sdk_versions
-
-    sdks.each do |sdk_path_str|
-      start_simulator(sdk_path_str,"iphone")
-      system("osascript #{reset_script}")
-      start_simulator(sdk_path_str,"ipad")
-      system("osascript #{reset_script}")
-    end
-
-    quit_simulator
-
   end
 
-  def launch_ios_app(app_path, sdk_version, device_family, app_args = nil)
+  def launch_ios_app(app_path)
     if problem = SimLauncher.check_app_path( app_path )
       bangs = '!'*80
       raise "\n#{bangs}\nENCOUNTERED A PROBLEM WITH THE SPECIFIED APP PATH:\n\n#{problem}\n#{bangs}"
     end
-    sdk_version ||= SdkDetector.new(self).latest_sdk_version
-    args = ["--args"] + app_args.flatten if app_args
-    run_synchronous_command( :launch, app_path, '--sdk', sdk_version, '--family', device_family, '--exit', *args )
+    run_synchronous_command('fbsimctl', 'install', app_path, '--name','--udid','25A008D8-F68C-414B-9D90-671B5290BBFB')
   end
 
   def launch_ipad_app( app_path, sdk )
-    launch_ios_app( app_path, sdk, 'ipad' )
+    launch_ios_app(app_path)
   end
 
   def launch_ipad_app_with_name( app_name, sdk )
@@ -65,16 +48,16 @@ class Simulator
   end
 
   def launch_iphone_app( app_path, sdk )
-    launch_ios_app( app_path, sdk, 'iphone' )
+    launch_ios_app(app_path)
   end
 
   def launch_iphone_app_with_name( app_name, sdk )
     app_path = SimLauncher.app_bundle_or_raise(app_name)
-    launch_ios_app( app_path, sdk, 'iphone' )
+    launch_ios_app(app_path)
   end
 
   def quit_simulator
-    `echo 'application "iPhone Simulator" quit' | osascript`
+    run_synchronous_command('fbsimctl', 'shutdown', '--udid','25A008D8-F68C-414B-9D90-671B5290BBFB')
   end
 
   def run_synchronous_command( *args )

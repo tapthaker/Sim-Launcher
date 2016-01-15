@@ -50,11 +50,6 @@ get '/launch_iphone_app' do
   app_path = params[:app_path]
   app_name = params[:app_name]
 
-  sdk = params[:sdk]
-  restart_requested = ("true" == params[:restart])
-
-  shared_simulator.quit_simulator if restart_requested
-
   if (!app_name.nil? && !app_name.empty?)
     shared_simulator.launch_iphone_app_with_name( app_name, sdk )
   else
